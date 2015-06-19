@@ -26,7 +26,7 @@ class Category extends BaseCategory
     protected $context;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Category")
+     * @ORM\ManyToOne(targetEntity="Category", inversedBy="children")
      * @ORM\JoinColumn(name="parent_id", referencedColumnName="id", nullable=true)
      */
     protected $parent;
@@ -55,7 +55,7 @@ class Category extends BaseCategory
     /**
      * Set context
      *
-     * @param \Symbio\OrangeGate\ClassificationBundle\Entity\Context $context
+     * @param Context $context
      * @return Category
      */
     public function setContext(\Sonata\ClassificationBundle\Model\ContextInterface $context)
@@ -68,7 +68,7 @@ class Category extends BaseCategory
     /**
      * Get context
      *
-     * @return \Symbio\OrangeGate\ClassificationBundle\Entity\Context
+     * @return Context
      */
     public function getContext()
     {
@@ -78,7 +78,7 @@ class Category extends BaseCategory
     /**
      * Set parent
      *
-     * @param \Symbio\OrangeGate\ClassificationBundle\Entity\Category $parent
+     * @param Category $parent
      * @return Category
      */
     public function setParent(\Sonata\ClassificationBundle\Model\CategoryInterface $parent = null, $nested = false)
@@ -91,7 +91,7 @@ class Category extends BaseCategory
     /**
      * Get parent
      *
-     * @return \Symbio\OrangeGate\ClassificationBundle\Entity\Category
+     * @return Category
      */
     public function getParent()
     {
