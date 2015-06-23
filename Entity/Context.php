@@ -19,6 +19,14 @@ class Context extends BaseContext
     protected $id;
 
     /**
+     * @var Site
+     *
+     * @ORM\ManyToOne(targetEntity="Symbio\OrangeGate\PageBundle\Entity\Site", cascade={"persist"})
+     * @ORM\JoinColumn(name="site_id", nullable=true)
+     */
+    private $site;
+
+    /**
      * Get id
      *
      * @return string $id
@@ -38,6 +46,28 @@ class Context extends BaseContext
     {
         $this->id = $id;
 
+        return $this;
+    }
+
+    /**
+     * Get site
+     *
+     * @return Site
+     */
+    public function getSite()
+    {
+        return $this->site;
+    }
+
+    /**
+     * Set site
+     *
+     * @param Site $site
+     * @return Context
+     */
+    public function setSite($site)
+    {
+        $this->site = $site;
         return $this;
     }
 }
