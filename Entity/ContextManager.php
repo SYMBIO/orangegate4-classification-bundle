@@ -2,6 +2,7 @@
 
 namespace Symbio\OrangeGate\ClassificationBundle\Entity;
 
+use Doctrine\ORM\QueryBuilder;
 use Sonata\ClassificationBundle\Model\ContextManagerInterface;
 use Sonata\ClassificationBundle\Entity\ContextManager as BaseContextManager;
 
@@ -17,6 +18,9 @@ class ContextManager extends BaseContextManager implements ContextManagerInterfa
     {
         $parameters = array();
 
+        /**
+         * @var QueryBuilder $query
+         */
         $query = $this->getRepository()
             ->createQueryBuilder('c')
             ->select('c');
@@ -29,6 +33,14 @@ class ContextManager extends BaseContextManager implements ContextManagerInterfa
         if (isset($criteria['enabled'])) {
             $query->andWhere('c.enabled = :enabled');
             $parameters['enabled'] = (bool) $criteria['enabled'];
+        }
+
+        if ($sort) {
+            foreach ($sort as $k => $v) {
+                $query->addOrderBy($k, $v);
+            }
+        } else {
+            $query->addOrderBy('c.name', 'ASC');
         }
 
         $query->setParameters($parameters);
