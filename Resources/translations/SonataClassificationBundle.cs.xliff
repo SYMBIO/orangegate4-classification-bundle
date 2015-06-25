@@ -50,6 +50,14 @@
                 <source>filter.label_enabled</source>
                 <target>Povoleno</target>
             </trans-unit>
+            <trans-unit id="filter.label_context_site">
+                <source>filter.label_context_site</source>
+                <target>Web</target>
+            </trans-unit>
+            <trans-unit id="form.label_site">
+                <source>form.label_site</source>
+                <target>Web</target>
+            </trans-unit>
             <trans-unit id="form.label_name">
                 <source>form.label_name</source>
                 <target>Název</target>

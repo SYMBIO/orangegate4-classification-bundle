@@ -7,10 +7,10 @@ use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Datagrid\DatagridMapper;
 use Sonata\AdminBundle\Form\FormMapper;
 
-class CollectionAdmin extends \Sonata\ClassificationBundle\Admin\CollectionAdmin
+class ContextAdmin extends \Sonata\ClassificationBundle\Admin\ContextAdmin
 {
     protected $listModes = array(
-        'tree' => array(
+        'list' => array(
             'class' => 'fa fa-list fa-fw',
         ),
     );
@@ -21,13 +21,14 @@ class CollectionAdmin extends \Sonata\ClassificationBundle\Admin\CollectionAdmin
     protected function configureFormFields(FormMapper $formMapper)
     {
         $formMapper
-            ->add('enabled', null, array('required' => false))
+            ->ifTrue(!($this->hasSubject() && $this->getSubject()->getId() !== null))
+            ->add('id')
+            ->ifEnd()
+            ->add('site')
             ->add('name')
-            ->add('description', 'textarea', array('required' => false))
-            ->add('context')
+            ->add('enabled', null, array('required' => false))
         ;
     }
-
 
     /**
      * {@inheritdoc}
@@ -35,12 +36,11 @@ class CollectionAdmin extends \Sonata\ClassificationBundle\Admin\CollectionAdmin
     protected function configureDatagridFilters(DatagridMapper $datagridMapper)
     {
         $datagridMapper
-            ->add('name')
-            ->add('enabled')
-            ->add('context.site', null, array(
+            ->add('site', null, array(
                 'show_filter' => false,
             ))
-            ->add('context')
+            ->add('name')
+            ->add('enabled')
         ;
     }
 }

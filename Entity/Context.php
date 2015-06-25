@@ -4,6 +4,7 @@ namespace Symbio\OrangeGate\ClassificationBundle\Entity;
 
 use Sonata\ClassificationBundle\Entity\BaseContext;
 use Doctrine\ORM\Mapping as ORM;
+use Symbio\OrangeGate\PageBundle\Entity\Site;
 
 /**
  * @ORM\Entity
@@ -69,5 +70,14 @@ class Context extends BaseContext
     {
         $this->site = $site;
         return $this;
+    }
+
+    public function __toString()
+    {
+        if ($this->site) {
+            return $this->site->getName().' / '.$this->getName();
+        }
+
+        return $this->getName();
     }
 }

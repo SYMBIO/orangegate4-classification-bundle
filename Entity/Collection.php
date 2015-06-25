@@ -20,13 +20,13 @@ class Collection extends BaseCollection
     protected $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Context", inversedBy="categories")
+     * @ORM\ManyToOne(targetEntity="Context")
      * @ORM\JoinColumn(name="context", referencedColumnName="id", nullable=true)
      */
     protected $context;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Symbio\OrangeGate\MediaBundle\Entity\Media", inversedBy="collections")
+     * @ORM\ManyToOne(targetEntity="Symbio\OrangeGate\MediaBundle\Entity\Media")
      * @ORM\JoinColumn(name="media_id", referencedColumnName="id", nullable=true)
      */
     protected $media;
