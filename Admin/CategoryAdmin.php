@@ -28,7 +28,7 @@ class CategoryAdmin extends \Sonata\ClassificationBundle\Admin\CategoryAdmin
 
         if ($this->getSubject()) {
             $parameters['context'] = $this->getSubject()->getContext() ? $this->getSubject()->getContext()->getId() : '';
-            $parameters['site'] = $this->getSubject()->getContext()->getSite()->getId();
+            $parameters['site'] = $this->getSubject()->getContext() ? $this->getSubject()->getContext() ->getSite()->getId() : '';
 
             return $parameters;
         }

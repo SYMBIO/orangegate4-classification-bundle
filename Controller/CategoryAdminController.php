@@ -62,6 +62,17 @@ class CategoryAdminController extends BaseController
             }
         }
 
+        if ($currentContext && !isset($mainCategory)) {
+            $mainCategory = $categoryManager->create();
+            $mainCategory->setName($currentContext->getName());
+            $mainCategory->setContext($currentContext);
+            $mainCategory->setEnabled(true);
+            $categoryManager->save($mainCategory);
+
+            // have to reload categories
+            $rootCategories = $categoryManager->getRootCategoriesForSite($currentSite, false);
+        }
+
         $datagrid = $this->admin->getDatagrid();
 
         if ($this->admin->getPersistentParameter('context')) {
