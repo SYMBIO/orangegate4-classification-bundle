@@ -24,7 +24,7 @@ class CategoryAdminController extends BaseController
      */
     public function listAction(Request $request = null)
     {
-        return new RedirectResponse($this->admin->generateUrl('tree'));
+        return $this->treeAction($request);
     }
 
     /**
@@ -83,7 +83,7 @@ class CategoryAdminController extends BaseController
 
         $this->get('twig')->getExtension('form')->renderer->setTheme($formView, $this->admin->getFilterTheme());
 
-        return $this->render('SymbioOrangeGateClassificationBundle:CategoryAdmin:tree.html.twig', array(
+        return $this->render($this->admin->getTemplate('tree'), array(
             'action'           => 'tree',
             'main_category'    => $mainCategory,
             'root_categories'  => $rootCategories,
