@@ -45,21 +45,14 @@ class CategoryAdminController extends BaseController
             $currentContext = $this->get('sonata.classification.manager.context')->find($context);
         }
 
-        $rootCategories = $categoryManager->getRootCategoriesForSite($currentSite, false);
-
         if (!$currentContext || $currentContext->getSite() !== $currentSite) {
+            $rootCategories = $categoryManager->getRootCategoriesForSite($currentSite, false);
+
             $mainCategory   = current($rootCategories);
             $currentContext = $mainCategory->getContext();
         } else {
-            foreach($rootCategories as $category) {
-                if ($currentContext->getId() != $category->getContext()->getId()) {
-                    continue;
-                }
-
-                $mainCategory = $category;
-
-                break;
-            }
+            $mainCategory = $categoryManager->getRootCategoryForContext($currentContext);
+            $rootCategories = array($mainCategory);
         }
 
         if ($currentContext && !isset($mainCategory)) {
@@ -68,15 +61,12 @@ class CategoryAdminController extends BaseController
             $mainCategory->setContext($currentContext);
             $mainCategory->setEnabled(true);
             $categoryManager->save($mainCategory);
-
-            // have to reload categories
-            $rootCategories = $categoryManager->getRootCategoriesForSite($currentSite, false);
         }
 
         $datagrid = $this->admin->getDatagrid();
 
-        if ($this->admin->getPersistentParameter('context')) {
-            $datagrid->setValue('context', ChoiceType::TYPE_EQUAL, $this->admin->getPersistentParameter('context'));
+        if ($context) {
+            $datagrid->setValue('context', ChoiceType::TYPE_EQUAL, $context);
         }
 
         $formView = $datagrid->getForm()->createView();

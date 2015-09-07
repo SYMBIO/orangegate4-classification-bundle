@@ -3,7 +3,7 @@
 {% import _self as tree %}
 {% macro categories(categories, admin, rootPages, current_context) %}
     <ul {% if rootPages %} class="page-tree"{% endif %}>
-        {% for category in categories if current_context == category.context and (not category.parent or not rootPages)%}
+        {% for category in categories if (not category.parent or not rootPages)%}
             <li class="sonata-ba-list-field" objectid="{{ category.id }}">
                 <div class="page-tree__item" objectid="{{ category.id }}">
                     {% if category.parent %}<i class="fa fa-caret-right"></i>{% endif %}
@@ -20,17 +20,12 @@
                     {% endif %}
                 </div>
                 {% if category.children|length %}
-                    {{ _self.categories(category.children, admin, false, current_context) }}
+                    {{ _self.categories(category.children, admin, false) }}
                 {% endif %}
             </li>
         {% endfor %}
     </ul>
 {% endmacro %}
-
-{% block stylesheets %}
-    {{ parent() }}
-    <link rel="stylesheet" href="/bundles/sonatapage/tree.css" type="text/css" media="screen" />
-{% endblock %}
 
 {% block tab_menu %}
 {% endblock %}
@@ -41,7 +36,8 @@
             <h2>&nbsp;</h2>
         </div>
         <div class="box-content">
-            {{tree.categories(admin.datagrid.results, admin, true, current_context)}}
+            {#{{tree.categories(root_categories, admin, true)}}#}
+            {{tree.categories(admin.datagrid.results, admin, true)}}
         </div>
     </div>
 {% endblock %}
