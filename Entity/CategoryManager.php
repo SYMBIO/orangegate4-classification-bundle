@@ -84,6 +84,15 @@ class CategoryManager extends \Sonata\ClassificationBundle\Entity\CategoryManage
         return $categories;
     }
 
+
+    public function getRootCategoryForContext(Context $context)
+    {
+        return $this->findOneBy(array(
+            'parent' => NULL,
+            'context' => $context
+        ));
+    }
+
     /**
      * {@inheritdoc}
      */

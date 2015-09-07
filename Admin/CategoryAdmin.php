@@ -42,4 +42,16 @@ class CategoryAdmin extends \Sonata\ClassificationBundle\Admin\CategoryAdmin
 
         return $parameters;
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+    {
+        $datagridMapper
+            ->add('name')
+            ->add('context')
+            ->add('enabled')
+        ;
+    }
 }

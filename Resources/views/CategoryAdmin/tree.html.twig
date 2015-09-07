@@ -1,58 +1,43 @@
 {% extends 'SymbioOrangeGateAdminBundle:CRUD:list.html.twig' %}
 
 {% import _self as tree %}
-{% macro navigate_child(collection, admin, root, depth) %}
-    <ul{% if root %} class="sonata-tree js-treeview"{% endif %}>
-        {% for element in collection %}
-            <li class="sonata-ba-list-field" objectId="{{ element.id }}" >
-                <div class="sonata-tree__item" data-treeview-toggled>
-                    <a class="sonata-tree__item__edit" href="{{ admin.generateObjectUrl('edit', element) }}">{{ element.name }}</a>
-                    <i class="text-muted">{{ element.description }}</i>
-                    {#<a class="label label-default pull-right" href="{{ admin.generateObjectUrl('edit', element) }}">edit <i class="fa fa-magic"></i></a>#}
-                    {% if element.enabled %}<span class="label label-success pull-right"><i class="fa fa-check"></i> {{ admin.trans('active', {}, admin.translationDomain) }}</span>{% endif %}
-                    {% if not element.enabled %}<span class="label label-danger pull-right"><i class="fa fa-times"> {{ admin.trans('disabled', {}, admin.translationDomain) }}</i></span>{% endif %}
+{% macro categories(categories, admin, rootPages, current_context) %}
+    <ul {% if rootPages %} class="page-tree"{% endif %}>
+        {% for category in categories if (not category.parent or not rootPages)%}
+            <li class="sonata-ba-list-field" objectid="{{ category.id }}">
+                <div class="page-tree__item" objectid="{{ category.id }}">
+                    {% if category.parent %}<i class="fa fa-caret-right"></i>{% endif %}
+                    <i class="fa page-tree__item__is-hybrid"></i>
+                    {% if app.request.xmlHttpRequest %}
+                        <a href="{{ admin.generateObjectUrl('edit', category) }}" class="sonata-tree__item__edit sonata-link-identifier">{{ category.name }}</a>
+                    {% else %}
+                        {% if category.parent %}
+                            <a href="{{ admin.generateObjectUrl('edit', category) }}" class="sonata-link-identifier">{{ category.name }}</a>
+                            <a class="label label-default pull-right" href="{{ admin.generateObjectUrl('edit', category) }}">edit <i class="fa fa-magic"></i></a>
+                        {% else %}
+                            {{ category.name }}
+                        {% endif %}
+                    {% endif %}
                 </div>
-
-                {% if element.children|length %}
-                    {{ _self.navigate_child(element.children, admin, false, depth + 1) }}
+                {% if category.children|length %}
+                    {{ _self.categories(category.children, admin, false) }}
                 {% endif %}
             </li>
         {% endfor %}
     </ul>
 {% endmacro %}
 
+{% block tab_menu %}
+{% endblock %}
+
 {% block list_table %}
-    <div class="col-xs-12 col-md-12">
-        <div class="box box-primary">
-            <div class="box-header">
-                <h1 class="box-title">
-                    {{ admin.trans('tree_catalog_title', {}, admin.translationdomain) }}
-                    {% if not app.request.get('hide_context') %}
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                <strong class="text-info">{{ current_context.name }}</strong> <span class="caret"></span>
-                            </button>
-                            <ul class="dropdown-menu" role="menu">
-                                {% for category in root_categories %}
-                                    <li>
-                                        <a href="{{ admin.generateUrl('tree', { 'context': category.context.id }) }}">
-                                            {% if current_context and category.context.id == current_context.id %}
-                                                <span class="pull-right">
-                                                    <i class="fa fa-check"></i>
-                                                </span>
-                                            {% endif %}
-                                            {{ category.name }}
-                                        </a>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                </h1>
-            </div>
-            <div class="box-content">
-                {{ tree.navigate_child([main_category], admin, true, 0) }}
-            </div>
+    <div class="box box-primary">
+        <div class="box-header">
+            <h2>&nbsp;</h2>
+        </div>
+        <div class="box-content">
+            {#{{tree.categories(root_categories, admin, true)}}#}
+            {{tree.categories(admin.datagrid.results, admin, true)}}
         </div>
     </div>
 {% endblock %}
