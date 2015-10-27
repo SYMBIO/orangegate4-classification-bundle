@@ -54,4 +54,18 @@ class CategoryAdmin extends \Sonata\ClassificationBundle\Admin\CategoryAdmin
             ->add('enabled')
         ;
     }
+
+    public function prePersist($object)
+    {
+        // make sure that context is set
+        // if not try to set it to same as got parent
+        if (null === $object->getContext() && $object->getParent()->getContext()) {
+            $object->setContext($object->getParent()->getContext());
+        }
+    }
+
+    public function preUpdate($object)
+    {
+        $this->prePersist($object);
+    }
 }
