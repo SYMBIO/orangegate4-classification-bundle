@@ -4,3 +4,9 @@ services:
         tags:
             - { name: sonata.admin, manager_type: orm, group: Classification, label: tags }
         arguments: [null, Symbio\OrangeGate\ClassificationBundle\Entity\Tag, null]
+
+    orangegate.classification.form.type.category_selector:
+        class: Symbio\OrangeGate\ClassificationBundle\Form\Type\CategorySelectorType
+        tags:
+            - { name: form.type, alias: orangegate_category_selector }
+        arguments: [@sonata.classification.manager.category]
