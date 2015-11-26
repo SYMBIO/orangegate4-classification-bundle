@@ -30,6 +30,30 @@ class CategoryManager extends \Sonata\ClassificationBundle\Entity\CategoryManage
     }
 
     /**
+     * @return CategoryInterface[]
+     */
+    public function getRootCategories($loadChildren = true)
+    {
+        $class = $this->getClass();
+
+        $rootCategories = $this->getObjectManager()->createQuery(sprintf('SELECT c FROM %s c INNER JOIN c.context cc WHERE c.parent IS NULL AND cc.enabled = :enabled', $class))
+            ->setParameter('enabled', true)
+            ->execute();
+
+        $categories = array();
+
+        foreach($rootCategories as $category) {
+            if ($category->getContext() === null) {
+                throw new \RuntimeException('Context cannot be null');
+            }
+
+            $categories[$category->getContext()->getId()] = $loadChildren ? $this->getRootCategory($category->getContext()) : $category;
+        }
+
+        return $categories;
+    }
+
+    /**
      * Returns a pager to iterate over the root category
      *
      * @param integer $page
@@ -48,10 +72,13 @@ class CategoryManager extends \Sonata\ClassificationBundle\Entity\CategoryManage
         $queryBuilder = $this->getObjectManager()->createQueryBuilder()
             ->select('c')
             ->from($this->class, 'c')
-            ->andWhere('c.parent IS NULL');
+            ->innerJoin('c.context', 'cc')
+            ->andWhere('c.parent IS NULL')
+            ->andWhere('cc.enabled = :enabled')
+            ->setParameter('enabled', true)
+        ;
 
         if (isset($criteria['site'])) {
-            $queryBuilder->innerJoin('c.context', 'cc');
             $queryBuilder->andWhere('cc.site = :site');
             $queryBuilder->setParameter('site', $criteria['site']);
         }
@@ -71,8 +98,9 @@ class CategoryManager extends \Sonata\ClassificationBundle\Entity\CategoryManage
     {
         $class = $this->getClass();
 
-        $rootCategories = $this->getObjectManager()->createQuery(sprintf('SELECT c FROM %s c INNER JOIN c.context cc WHERE c.parent IS NULL AND cc.site = :site', $class))
+        $rootCategories = $this->getObjectManager()->createQuery(sprintf('SELECT c FROM %s c INNER JOIN c.context cc WHERE c.parent IS NULL AND cc.site = :site AND cc.enabled = :enabled', $class))
             ->setParameter('site', $site)
+            ->setParameter('enabled', true)
             ->execute();
 
         $categories = array();
@@ -98,11 +126,15 @@ class CategoryManager extends \Sonata\ClassificationBundle\Entity\CategoryManage
      */
     public function getPager(array $criteria, $page, $limit = 10, array $sort = array())
     {
-        $parameters = array();
+        $parameters = array(
+            'context_enabled' => true
+        );
 
         $query = $this->getRepository()
             ->createQueryBuilder('c')
-            ->select('c');
+            ->select('c')
+            ->innerJoin('c.context', 'cc')
+            ->andWhere('cc.enabled = :context_enabled');
 
         if (isset($criteria['context'])) {
             $query->andWhere('c.context = :context');
@@ -110,7 +142,6 @@ class CategoryManager extends \Sonata\ClassificationBundle\Entity\CategoryManage
         }
 
         if (isset($criteria['site'])) {
-            $query->innerJoin('c.context', 'cc');
             $query->andWhere('cc.site = :site');
             $parameters['site'] = $criteria['site'];
         }
