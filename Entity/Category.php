@@ -53,6 +53,16 @@ class Category extends BaseCategory
     }
 
     /**
+     * @param int $id
+     * @return $this
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+        return $this;
+    }
+
+    /**
      * Set context
      *
      * @param Context $context
