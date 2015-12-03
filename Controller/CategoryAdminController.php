@@ -37,17 +37,13 @@ class CategoryAdminController extends BaseController
         $categoryManager = $this->get('sonata.classification.manager.category');
 
         $sitesPool = $this->get('orangegate.site.pool');
-        $sites = $sitesPool->getSites();
-        $currentSite = $sitesPool->getCurrentSite($request, $sites);
+        $currentSite = $sitesPool->getCurrentSite($request);
 
-        $currentContext = false;
-        if ($context = $request->get('context')) {
-            $currentContext = $this->get('sonata.classification.manager.context')->find($context);
-        }
+        $currentContext = $this->admin->getPersistentParameter('context');
+        $currentContext = $this->get('sonata.classification.manager.context')->findOneBy(array('id' => $currentContext));
 
         if (!$currentContext || $currentContext->getSite() !== $currentSite) {
             $rootCategories = $categoryManager->getRootCategoriesForSite($currentSite, false);
-
             $mainCategory   = current($rootCategories);
             $currentContext = $mainCategory->getContext();
         } else {
@@ -65,8 +61,8 @@ class CategoryAdminController extends BaseController
 
         $datagrid = $this->admin->getDatagrid();
 
-        if ($context) {
-            $datagrid->setValue('context', ChoiceType::TYPE_EQUAL, $context);
+        if ($currentContext) {
+            $datagrid->setValue('context', ChoiceType::TYPE_EQUAL, $currentContext->getId());
         }
 
         $formView = $datagrid->getForm()->createView();
@@ -78,7 +74,7 @@ class CategoryAdminController extends BaseController
             'main_category'    => $mainCategory,
             'root_categories'  => $rootCategories,
             'current_context'  => $currentContext,
-            'sites'            => $sites,
+            'sites'            => $sitesPool->getSites(),
             'currentSite'      => $currentSite,
             'form'             => $formView,
             'csrf_token'       => $this->getCsrfToken('sonata.batch'),

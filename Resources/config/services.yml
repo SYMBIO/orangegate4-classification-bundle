@@ -4,3 +4,9 @@ services:
         tags:
             - { name: sonata.admin, manager_type: orm, group: Classification, label: tags }
         arguments: [null, Symbio\OrangeGate\ClassificationBundle\Entity\Tag, null]
+
+    sonata.classification.admin.category:
+        class: Symbio\OrangeGate\ClassificationBundle\Admin\CategoryAdmin
+        tags:
+            - { name: sonata.admin, manager_type: orm, group: sonata_classification, label: label_categories, label_translator_strategy: sonata.admin.label.strategy.underscore }
+        arguments: [null, Symbio\OrangeGate\ClassificationBundle\Entity\Category, %sonata.classification.admin.category.controller%, @sonata.classification.manager.context, @orangegate.site.pool]

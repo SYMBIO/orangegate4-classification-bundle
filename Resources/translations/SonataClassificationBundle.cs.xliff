@@ -26,6 +26,10 @@
                 <source>breadcrumb.link_category_list</source>
                 <target>Kategorie</target>
             </trans-unit>
+            <trans-unit id="breadcrumb.link_category_tree">
+                <source>breadcrumb.link_category_tree</source>
+                <target>Seznam kategorií</target>
+            </trans-unit>
             <trans-unit id="list.label_name">
                 <source>list.label_name</source>
                 <target>Název</target>
