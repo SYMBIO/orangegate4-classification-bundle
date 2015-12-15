@@ -40,6 +40,12 @@ class CategoryAdminController extends BaseController
         $currentSite = $sitesPool->getCurrentSite($request);
 
         $currentContext = $this->admin->getPersistentParameter('context');
+
+        $filterParams = $this->admin->getFilterParameters();
+        if (isset($filterParams['context']['value']) && $filterParams['context']['value']) {
+            $currentContext = $filterParams['context']['value'];
+        }
+
         $currentContext = $this->get('sonata.classification.manager.context')->findOneBy(array('id' => $currentContext));
 
         if (!$currentContext || $currentContext->getSite() !== $currentSite) {
