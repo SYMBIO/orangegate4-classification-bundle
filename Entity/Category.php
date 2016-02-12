@@ -26,7 +26,12 @@ class Category extends BaseCategory
     protected $context;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Category", inversedBy="children")
+     * @ORM\OneToMany(targetEntity="Category", mappedBy="parent", fetch="EAGER", cascade={"persist"})
+     */
+    protected $children;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Category", inversedBy="children", fetch="EAGER")
      * @ORM\JoinColumn(name="parent_id", referencedColumnName="id", nullable=true)
      */
     protected $parent;
