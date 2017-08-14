@@ -41,3 +41,13 @@
         </div>
     </div>
 {% endblock %}
+
+{% block actions %}
+    {% spaceless %}
+        {% if (admin.hasRoute('create') and admin.isGranted('CREATE')) or (admin.hasRoute('compose') and admin.isGranted('EDIT', admin.subject)) %}
+            <a class="btn btn-success sonata-action-element" href="{{ admin.generateUrl('create', {'context': current_context.id}) }}">
+                <i class="fa fa-plus"></i>&nbsp;
+                {{ 'link_action_create'|trans({}, 'SonataAdminBundle') }}</a>
+        {% endif %}
+    {% endspaceless %}
+{% endblock %}
