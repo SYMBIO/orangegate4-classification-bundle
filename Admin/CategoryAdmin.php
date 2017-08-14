@@ -92,9 +92,16 @@ class CategoryAdmin extends \Sonata\ClassificationBundle\Admin\CategoryAdmin
      */
     protected function configureDatagridFilters(DatagridMapper $datagridMapper)
     {
+        $container = $this->configurationPool->getContainer();
+        $request = $container->get('request_stack')->getCurrentRequest();
+        $site = $this->sitePool->getCurrentSite($request);
+
+        $contexts = $container->get('doctrine.orm.entity_manager')
+            ->getRepository('SymbioOrangeGateClassificationBundle:Context')->findBy(['enabled' => true, 'site' => $site]);
+
         $datagridMapper
             ->add('name')
-            ->add('context')
+            ->add('context', null, [], null, ['choices' => $contexts])
             ->add('enabled')
         ;
     }
