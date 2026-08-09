@@ -1,0 +1,4 @@
+services:
+    Symbio\OrangeGate\ClassificationBundle\EventListener\StringColumnLengthListener:
+        tags:
+            - { name: doctrine.event_listener, event: loadClassMetadata }

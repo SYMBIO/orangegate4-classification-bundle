@@ -2,7 +2,12 @@
     "name": "symbio/orangegate4-classification-bundle",
     "type": "symfony-bundle",
     "description": "SYMBIO OrangeGateClassificationBundle",
-    "keywords": ["Admin Generator", "admin", "orangegate", "bootstrap"],
+    "keywords": [
+        "Admin Generator",
+        "admin",
+        "orangegate",
+        "bootstrap"
+    ],
     "homepage": "http://www.symbiodigital.com/",
     "license": "MIT",
     "authors": [
@@ -13,20 +18,24 @@
         }
     ],
     "require": {
-        "sonata-project/classification-bundle": "~2.3@dev",
-        "symbio/orangegate4-doctrine-orm-admin-bundle": "~1.0@dev",
-        "symbio/orangegate4-admin-bundle": "~1.0@dev"
+        "php": "^8.5",
+        "symfony/framework-bundle": "7.4.*",
+        "sonata-project/classification-bundle": "^4.11",
+        "symbio/orangegate4-doctrine-orm-admin-bundle": "^4.1 || 4.1.x-dev || dev-feature/php-8-5-upgrade || dev-master",
+        "symbio/orangegate4-admin-bundle": "^4.1 || 4.1.x-dev || dev-feature/php-8-5-upgrade || dev-master"
     },
-    "require-dev": {
-    },
-    "suggest": {
-    },
+    "require-dev": {},
+    "suggest": {},
     "autoload": {
-        "psr-4": { "Symbio\\OrangeGate\\ClassificationBundle\\": "" }
+        "psr-4": {
+            "Symbio\\OrangeGate\\ClassificationBundle\\": ""
+        }
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "1.0.x-dev"
+            "dev-master": "4.1.x-dev"
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

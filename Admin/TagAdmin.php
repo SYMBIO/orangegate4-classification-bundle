@@ -2,8 +2,9 @@
 
 namespace Symbio\OrangeGate\ClassificationBundle\Admin;
 
-class TagAdmin extends \Sonata\ClassificationBundle\Admin\TagAdmin
+use Sonata\ClassificationBundle\Admin\ContextAwareAdmin;
+
+class TagAdmin extends ContextAwareAdmin
 {
     protected $translationDomain = 'SonataClassificationBundle';
-
 }

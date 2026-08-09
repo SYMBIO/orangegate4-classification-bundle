@@ -2,59 +2,27 @@
 
 namespace Symbio\OrangeGate\ClassificationBundle\Entity;
 
-use Sonata\ClassificationBundle\Entity\BaseTag as BaseTag;
 use Doctrine\ORM\Mapping as ORM;
+use Sonata\ClassificationBundle\Entity\BaseTag;
 
-/**
- * @ORM\Entity
- * @ORM\Table(name="classification__tag")
- */
+#[ORM\Entity]
+#[ORM\Table(name: 'classification__tag')]
 class Tag extends BaseTag
 {
-    /**
-     * @var integer $id
-     * @ORM\Column(type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
-    protected $id;
+    #[ORM\Column(type: 'integer')]
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
+    protected ?int $id = null;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Context", inversedBy="categories")
-     * @ORM\JoinColumn(name="context", referencedColumnName="id", nullable=true)
-     */
-    protected $context;
-
-    /**
-     * Get id
-     *
-     * @return integer $id
-     */
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
 
-    /**
-     * Set context
-     *
-     * @param \Symbio\OrangeGate\ClassificationBundle\Entity\Context $context
-     * @return Tag
-     */
-    public function setContext(\Sonata\ClassificationBundle\Model\ContextInterface $context)
+    public function getContext(): ?Context
     {
-        $this->context = $context;
+        $context = parent::getContext();
 
-        return $this;
-    }
-
-    /**
-     * Get context
-     *
-     * @return \Symbio\OrangeGate\ClassificationBundle\Entity\Context
-     */
-    public function getContext()
-    {
-        return $this->context;
+        return $context instanceof Context ? $context : null;
     }
 }

@@ -1,185 +1,231 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Symbio\OrangeGate\ClassificationBundle\Entity;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
-use Doctrine\ORM\QueryBuilder;
-use Sonata\AdminBundle\Datagrid\PagerInterface;
-
+use Doctrine\Persistence\ManagerRegistry;
 use Sonata\ClassificationBundle\Model\CategoryInterface;
 use Sonata\ClassificationBundle\Model\CategoryManagerInterface;
-
 use Sonata\ClassificationBundle\Model\ContextInterface;
 use Sonata\ClassificationBundle\Model\ContextManagerInterface;
-use Sonata\CoreBundle\Model\BaseEntityManager;
-
-use Sonata\DatagridBundle\Pager\Doctrine\Pager;
-use Sonata\DatagridBundle\ProxyQuery\Doctrine\ProxyQuery;
+use Sonata\Doctrine\Entity\BaseEntityManager;
 use Symbio\OrangeGate\PageBundle\Entity\Site;
 
-class CategoryManager extends \Sonata\ClassificationBundle\Entity\CategoryManager implements CategoryManagerInterface
+/**
+ * @phpstan-extends BaseEntityManager<CategoryInterface>
+ */
+class CategoryManager extends BaseEntityManager implements CategoryManagerInterface
 {
     /**
-     * @param string                  $class
-     * @param ManagerRegistry         $registry
-     * @param ContextManagerInterface $contextManager
+     * @var array<string, CategoryInterface[]>
      */
-    public function __construct($class, ManagerRegistry $registry, ContextManagerInterface $contextManager)
+    protected array $categories = [];
+
+    /**
+     * @phpstan-param class-string<CategoryInterface> $class
+     */
+    public function __construct(
+        string $class,
+        ManagerRegistry $registry,
+        protected ContextManagerInterface $contextManager,
+    ) {
+        parent::__construct($class, $registry);
+    }
+
+    public function getRootCategoryWithChildren(CategoryInterface $category): CategoryInterface
     {
-        parent::__construct($class, $registry, $contextManager);
+        $context = $category->getContext();
+        if (null === $context) {
+            throw new \InvalidArgumentException(\sprintf(
+                'Context of category "%s" cannot be null.',
+                $category->getId() ?? ''
+            ));
+        }
+
+        $contextId = $context->getId();
+        if (null === $contextId) {
+            throw new \InvalidArgumentException(\sprintf(
+                'Context of category "%s" must have an not null identifier.',
+                $category->getId() ?? ''
+            ));
+        }
+
+        if (null !== $category->getParent()) {
+            throw new \InvalidArgumentException('Method can be called only for root categories.');
+        }
+
+        $this->loadCategories($context);
+
+        foreach ($this->categories[$contextId] as $contextRootCategory) {
+            if ($category->getId() === $contextRootCategory->getId()) {
+                return $contextRootCategory;
+            }
+        }
+
+        throw new \InvalidArgumentException(\sprintf('Category "%s" does not exist.', $category->getId() ?? ''));
+    }
+
+    public function getRootCategoriesForContext(?ContextInterface $context = null): array
+    {
+        if (null === $context) {
+            $context = $this->getDefaultContext();
+        }
+
+        $contextId = $context->getId();
+        if (null === $contextId) {
+            throw new \InvalidArgumentException(\sprintf(
+                'Context "%s" must have an not null identifier.',
+                $context->getName() ?? ''
+            ));
+        }
+
+        $this->loadCategories($context);
+
+        return $this->categories[$contextId];
+    }
+
+    public function getAllRootCategories(bool $loadChildren = true): array
+    {
+        /** @var CategoryInterface[] $rootCategories */
+        $rootCategories = $this->getRepository()
+            ->createQueryBuilder('c')
+            ->where('c.parent IS NULL')
+            ->getQuery()
+            ->getResult();
+
+        if ([] === $rootCategories) {
+            return $this->getRootCategoriesForContext(null);
+        }
+
+        $categories = [];
+
+        foreach ($rootCategories as $category) {
+            if (null === $category->getContext()) {
+                throw new \LogicException(\sprintf(
+                    'Context of category "%s" cannot be null.',
+                    $category->getId() ?? ''
+                ));
+            }
+
+            $categories[] = $loadChildren ? $this->getRootCategoryWithChildren($category) : $category;
+        }
+
+        return $categories;
+    }
+
+    public function getRootCategoriesSplitByContexts(bool $loadChildren = true): array
+    {
+        $rootCategories = $this->getAllRootCategories($loadChildren);
+
+        $splitCategories = [];
+
+        foreach ($rootCategories as $category) {
+            $context = $category->getContext();
+
+            \assert(null !== $context);
+
+            $splitCategories[(string) $context->getId()][] = $category;
+        }
+
+        return $splitCategories;
+    }
+
+    public function getBySlug(string $slug, ?string $contextId = null, ?bool $enabled = true): ?CategoryInterface
+    {
+        $queryBuilder = $this->getRepository()
+            ->createQueryBuilder('c')
+            ->select('c')
+            ->andWhere('c.slug = :slug')->setParameter('slug', $slug);
+
+        if (null !== $contextId) {
+            $queryBuilder->andWhere('c.context = :context')->setParameter('context', $contextId);
+        }
+        if (null !== $enabled) {
+            $queryBuilder->andWhere('c.enabled = :enabled')->setParameter('enabled', $enabled);
+        }
+
+        return $queryBuilder->getQuery()->getOneOrNullResult();
     }
 
     /**
      * @return CategoryInterface[]
      */
-    public function getRootCategories($loadChildren = true)
+    public function getRootCategories(bool $loadChildren = true): array
     {
         $class = $this->getClass();
 
-        $rootCategories = $this->getObjectManager()->createQuery(sprintf('SELECT c FROM %s c INNER JOIN c.context cc WHERE c.parent IS NULL AND cc.enabled = :enabled', $class))
+        $rootCategories = $this->getObjectManager()->createQuery(
+            \sprintf('SELECT c FROM %s c INNER JOIN c.context cc WHERE c.parent IS NULL AND cc.enabled = :enabled', $class)
+        )
             ->setParameter('enabled', true)
             ->execute();
 
-        $categories = array();
+        $categories = [];
 
-        foreach($rootCategories as $category) {
-            if ($category->getContext() === null) {
+        foreach ($rootCategories as $category) {
+            if (null === $category->getContext()) {
                 throw new \RuntimeException('Context cannot be null');
             }
 
-            $categories[$category->getContext()->getId()] = $loadChildren ? $this->getRootCategory($category->getContext()) : $category;
+            $categories[$category->getContext()->getId()] = $loadChildren
+                ? $this->getRootCategoryWithChildren($category)
+                : $category;
         }
 
         return $categories;
     }
 
     /**
-     * Returns a pager to iterate over the root category
-     *
-     * @param integer $page
-     * @param integer $limit
-     * @param array   $criteria
-     *
-     * @return mixed
-     */
-    public function getRootCategoriesPager($page = 1, $limit = 25, $criteria = array())
-    {
-        $page = (int) $page == 0 ? 1 : (int) $page;
-
-        /**
-         * @var QueryBuilder $queryBuilder
-         */
-        $queryBuilder = $this->getObjectManager()->createQueryBuilder()
-            ->select('c')
-            ->from($this->class, 'c')
-            ->innerJoin('c.context', 'cc')
-            ->andWhere('c.parent IS NULL')
-            ->andWhere('cc.enabled = :enabled')
-            ->setParameter('enabled', true)
-        ;
-
-        if (isset($criteria['site'])) {
-            $queryBuilder->andWhere('cc.site = :site');
-            $queryBuilder->setParameter('site', $criteria['site']);
-        }
-
-        $pager = new Pager($limit);
-        $pager->setQuery(new ProxyQuery($queryBuilder));
-        $pager->setPage($page);
-        $pager->init();
-
-        return $pager;
-    }
-
-    /**
      * @return CategoryInterface[]
      */
-    public function getRootCategoriesForSite(Site $site, $loadChildren = true)
+    public function getRootCategoriesForSite(Site $site, bool $loadChildren = true): array
     {
         $class = $this->getClass();
 
-        $rootCategories = $this->getObjectManager()->createQuery(sprintf('SELECT c FROM %s c INNER JOIN c.context cc WHERE c.parent IS NULL AND cc.site = :site AND cc.enabled = :enabled', $class))
+        $rootCategories = $this->getObjectManager()->createQuery(
+            \sprintf('SELECT c FROM %s c INNER JOIN c.context cc WHERE c.parent IS NULL AND cc.site = :site AND cc.enabled = :enabled', $class)
+        )
             ->setParameter('site', $site)
             ->setParameter('enabled', true)
             ->execute();
 
-        $categories = array();
+        $categories = [];
 
-        foreach($rootCategories as $category) {
-            $categories[$category->getContext()->getId()] = $loadChildren ? $this->getRootCategory($category->getContext()) : $category;
+        foreach ($rootCategories as $category) {
+            $categories[$category->getContext()->getId()] = $loadChildren
+                ? $this->getRootCategoryWithChildren($category)
+                : $category;
         }
 
         return $categories;
     }
 
-
-    public function getRootCategoryForContext(Context $context)
+    public function getRootCategoryForContext(Context $context): ?CategoryInterface
     {
-        return $this->findOneBy(array(
-            'parent' => NULL,
-            'context' => $context
-        ));
+        return $this->findOneBy([
+            'parent' => null,
+            'context' => $context,
+        ]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getPager(array $criteria, $page, $limit = 10, array $sort = array())
+    protected function loadCategories(ContextInterface $context): void
     {
-        $parameters = array(
-            'context_enabled' => true
-        );
-
-        $query = $this->getRepository()
-            ->createQueryBuilder('c')
-            ->select('c')
-            ->innerJoin('c.context', 'cc')
-            ->andWhere('cc.enabled = :context_enabled');
-
-        if (isset($criteria['context'])) {
-            $query->andWhere('c.context = :context');
-            $parameters['context'] = $criteria['context'];
-        }
-
-        if (isset($criteria['site'])) {
-            $query->andWhere('cc.site = :site');
-            $parameters['site'] = $criteria['site'];
-        }
-
-        if (isset($criteria['enabled'])) {
-            $query->andWhere('c.enabled = :enabled');
-            $parameters['enabled'] = (bool) $criteria['enabled'];
-        }
-
-        $query->setParameters($parameters);
-
-        $pager = new Pager();
-        $pager->setMaxPerPage($limit);
-        $pager->setQuery(new ProxyQuery($query));
-        $pager->setPage($page);
-        $pager->init();
-
-        return $pager;
-    }
-
-    /**
-     * {@inheritdoc}
-     * @Order by category position
-     */
-    protected function loadCategories(ContextInterface $context)
-    {
-        if (array_key_exists($context->getId(), $this->categories)) {
+        $contextId = $context->getId();
+        if (null === $contextId || \array_key_exists($contextId, $this->categories)) {
             return;
         }
 
         $class = $this->getClass();
 
-        $categories = $this->getObjectManager()->createQuery(sprintf('SELECT c FROM %s c WHERE c.context = :context ORDER BY c.parent ASC, c.position ASC', $class))
+        /** @var CategoryInterface[] $categories */
+        $categories = $this->getObjectManager()->createQuery(
+            \sprintf('SELECT c FROM %s c WHERE c.context = :context ORDER BY c.parent ASC, c.position ASC', $class)
+        )
             ->setParameter('context', $context->getId())
             ->execute();
 
-        if (count($categories) == 0) {
-            // no category, create one for the provided context
+        if (0 === \count($categories)) {
             $category = $this->create();
             $category->setName($context->getName());
             $category->setEnabled(true);
@@ -188,31 +234,45 @@ class CategoryManager extends \Sonata\ClassificationBundle\Entity\CategoryManage
 
             $this->save($category);
 
-            $categories = array($category);
+            $categories = [$category];
         }
 
+        $root = null;
         foreach ($categories as $pos => $category) {
-            if ($pos === 0 && $category->getParent()) {
+            if (0 === $pos && null !== $category->getParent()) {
                 throw new \RuntimeException('The first category must be the root');
             }
 
-            if ($pos == 0) {
+            if (0 === $pos) {
                 $root = $category;
             }
 
-            $this->categories[$context->getId()][$category->getId()] = $category;
+            $this->categories[$contextId][$category->getId() ?? 0] = $category;
 
             $parent = $category->getParent();
 
-            $category->disableChildrenLazyLoading();
-
-            if ($parent) {
+            if (null !== $parent) {
                 $parent->addChild($category);
             }
         }
 
-        $this->categories[$context->getId()] = array(
-            0 => $root
-        );
+        $this->categories[$contextId] = [$root];
+    }
+
+    private function getDefaultContext(): ContextInterface
+    {
+        $contextObj = $this->contextManager->find(ContextInterface::DEFAULT_CONTEXT);
+
+        if (!$contextObj instanceof ContextInterface) {
+            $contextObj = $this->contextManager->create();
+
+            $contextObj->setId(ContextInterface::DEFAULT_CONTEXT);
+            $contextObj->setName(ContextInterface::DEFAULT_CONTEXT);
+            $contextObj->setEnabled(true);
+
+            $this->contextManager->save($contextObj);
+        }
+
+        return $contextObj;
     }
 }

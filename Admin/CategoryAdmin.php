@@ -2,81 +2,75 @@
 
 namespace Symbio\OrangeGate\ClassificationBundle\Admin;
 
-use Sonata\AdminBundle\Admin\Admin;
-use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Datagrid\DatagridMapper;
-use Sonata\AdminBundle\Form\FormMapper;
-use Sonata\ClassificationBundle\Entity\ContextManager;
+use Sonata\ClassificationBundle\Admin\ContextAwareAdmin;
+use Sonata\ClassificationBundle\Model\ContextManagerInterface;
+use Symbio\OrangeGate\ClassificationBundle\Entity\Context;
 use Symbio\OrangeGate\PageBundle\Entity\SitePool;
 
-class CategoryAdmin extends \Sonata\ClassificationBundle\Admin\CategoryAdmin
+class CategoryAdmin extends ContextAwareAdmin
 {
     protected $translationDomain = 'SonataClassificationBundle';
 
-    protected $listModes = array(
-        'tree' => array(
+    protected $listModes = [
+        'tree' => [
             'class' => 'fa fa-list fa-fw',
-        ),
-    );
+        ],
+    ];
 
-    /**
-     * @var SitePool
-     */
-    protected $sitePool;
+    protected SitePool $sitePool;
 
-    /**
-     * @param string         $code
-     * @param string         $class
-     * @param string         $baseControllerName
-     * @param ContextManager $contextManager
-     */
-    public function __construct($code, $class, $baseControllerName, ContextManager $contextManager, SitePool $sitePool)
-    {
+    public function __construct(
+        $code,
+        $class,
+        $baseControllerName,
+        ContextManagerInterface $contextManager,
+        SitePool $sitePool,
+    ) {
         parent::__construct($code, $class, $baseControllerName, $contextManager);
 
         $this->sitePool = $sitePool;
     }
 
     /**
-     * Returns list of available contexts
-     *
-     * @return array
+     * @return array<int, object>
      */
-    public function getContextList()
+    public function getContextList(): array
     {
-        $criteria = array(
-            'site' => $this->sitePool->getCurrentSite($this->getRequest())
-        );
+        $criteria = [
+            'site' => $this->sitePool->getCurrentSite($this->getRequest()),
+        ];
 
-        return $this->contextManager->findBy($criteria, array('name' => 'asc'));
+        return $this->contextManager->findBy($criteria, ['name' => 'asc']);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getPersistentParameters()
+    protected function configurePersistentParameters(): array
     {
-        $parameters = array(
-            'site'         => '',
-            'context'      => '',
-            'hide_context' => $this->hasRequest() ? (int)$this->getRequest()->get('hide_context', 0) : 0
-        );
+        $parameters = [
+            'site' => '',
+            'context' => '',
+            'hide_context' => $this->hasRequest() ? $this->getRequest()->query->getInt('hide_context', 0) : 0,
+        ];
 
-        if ($this->getSubject()) {
-            $parameters['context'] = $this->getSubject()->getContext() ? $this->getSubject()->getContext()->getId() : '';
-            $parameters['site'] = $this->getSubject()->getContext() ? $this->getSubject()->getContext() ->getSite()->getId() : '';
+        if ($this->hasSubject()) {
+            $context = $this->getSubject()->getContext();
+            $parameters['context'] = null !== $context ? $context->getId() : '';
+            $parameters['site'] = ($context instanceof Context && null !== $context->getSite())
+                ? $context->getSite()->getId()
+                : '';
 
             return $parameters;
         }
 
         if ($this->hasRequest()) {
-            if ($filter = $this->getRequest()->get('filter') && isset($filter['context'])) {
+            $filter = $this->getRequest()->get('filter');
+            if (\is_array($filter) && isset($filter['context'])) {
                 $context = $filter['context']['value'];
             } else {
                 $context = $this->getRequest()->get('context', false);
-                $available_contexts = array_map(function ($c) { return $c->getId(); }, $this->getContextList());
-                if (!$context || !in_array($context, $available_contexts)) {
-                    $context = $available_contexts[0];
+                $availableContexts = array_map(static fn ($c) => $c->getId(), $this->getContextList());
+                if (!$context || !\in_array($context, $availableContexts, true)) {
+                    $context = $availableContexts[0] ?? '';
                 }
             }
 
@@ -87,28 +81,24 @@ class CategoryAdmin extends \Sonata\ClassificationBundle\Admin\CategoryAdmin
         return $parameters;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+    protected function configureDatagridFilters(DatagridMapper $datagridMapper): void
     {
+        parent::configureDatagridFilters($datagridMapper);
+
         $datagridMapper
             ->add('name')
-            ->add('context')
             ->add('enabled')
         ;
     }
 
-    public function prePersist($object)
+    public function prePersist(object $object): void
     {
-        // make sure that context is set
-        // if not try to set it to same as got parent
-        if (null === $object->getContext() && $object->getParent()->getContext()) {
+        if (null === $object->getContext() && null !== $object->getParent()?->getContext()) {
             $object->setContext($object->getParent()->getContext());
         }
     }
 
-    public function preUpdate($object)
+    public function preUpdate(object $object): void
     {
         $this->prePersist($object);
     }
