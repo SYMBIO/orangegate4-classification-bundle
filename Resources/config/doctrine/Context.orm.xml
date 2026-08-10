@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://doctrine-project.org/schemas/orm/doctrine-mapping https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
-    <entity name="Symbio\OrangeGate\ClassificationBundle\Entity\Context">
+    <entity name="Symbio\OrangeGate\ClassificationBundle\Entity\Context" table="classification__context">
         <id name="id" type="string" length="255">
             <generator strategy="NONE"/>
         </id>
